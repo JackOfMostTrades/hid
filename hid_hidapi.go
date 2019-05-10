@@ -4,7 +4,7 @@ package hid
 import "C"
 
 /*
-#cgo freebsd CFLAGS: -I/usr/include/hidapi
+#cgo freebsd CFLAGS: -I/usr/local/include/hidapi
 #cgo freebsd LDFLAGS: -L/usr/local/lib -Wl,-Bstatic -lhidapi -liconv -Wl,-Bdynamic -lusb
 
 #include <stdlib.h>
