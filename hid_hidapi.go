@@ -1,6 +1,7 @@
-// +build freebsd
+// +build freebsd darwin
 
 package hid
+
 import "C"
 
 /*
@@ -9,7 +10,7 @@ import "C"
 
 #include <stdlib.h>
 #include <hidapi.h>
- */
+*/
 import "C"
 
 import (
@@ -19,8 +20,8 @@ import (
 	"unsafe"
 )
 
-type linuxDevice struct {
-	info *DeviceInfo
+type hidapiDevice struct {
+	info   *DeviceInfo
 	device *C.hid_device
 
 	readSetup sync.Once
@@ -60,16 +61,16 @@ func getDeviceInfo(device *C.struct_hid_device_info) (*DeviceInfo, error) {
 	}
 
 	return &DeviceInfo{
-		Path: C.GoString(device.path),
-		VendorID: uint16(device.vendor_id),
-		ProductID: uint16(device.product_id),
+		Path:          C.GoString(device.path),
+		VendorID:      uint16(device.vendor_id),
+		ProductID:     uint16(device.product_id),
 		VersionNumber: uint16(device.release_number),
-		Manufacturer: manufacturer,
-		Product: product,
-		UsagePage: uint16(device.usage_page),
-		Usage: uint16(device.usage),
+		Manufacturer:  manufacturer,
+		Product:       product,
+		UsagePage:     uint16(device.usage_page),
+		Usage:         uint16(device.usage),
 
-		InputReportLength: 64, // Default size of raw HID report
+		InputReportLength:  64, // Default size of raw HID report
 		OutputReportLength: 64,
 	}, nil
 }
@@ -95,14 +96,14 @@ func (d *DeviceInfo) Open() (Device, error) {
 		return nil, fmt.Errorf("unable to open device: %s", d.Path)
 	}
 
-	return &linuxDevice{info: d, device: device}, nil
+	return &hidapiDevice{info: d, device: device}, nil
 }
 
-func (d *linuxDevice) Close() {
+func (d *hidapiDevice) Close() {
 	C.hid_close(d.device)
 }
 
-func (d *linuxDevice) Write(data []byte) error {
+func (d *hidapiDevice) Write(data []byte) error {
 	dat := (*C.uchar)(C.CBytes(data))
 	defer C.free(unsafe.Pointer(dat))
 	n := C.hid_write(d.device, dat, C.ulong(len(data)))
@@ -112,7 +113,7 @@ func (d *linuxDevice) Write(data []byte) error {
 	return nil
 }
 
-func (d *linuxDevice) ReadCh() <-chan []byte {
+func (d *hidapiDevice) ReadCh() <-chan []byte {
 	d.readSetup.Do(func() {
 		d.readCh = make(chan []byte, 30)
 		go d.readThread()
@@ -120,11 +121,11 @@ func (d *linuxDevice) ReadCh() <-chan []byte {
 	return d.readCh
 }
 
-func (d *linuxDevice) ReadError() error {
+func (d *hidapiDevice) ReadError() error {
 	return d.readErr
 }
 
-func (d *linuxDevice) readThread() {
+func (d *hidapiDevice) readThread() {
 	defer close(d.readCh)
 	bufLen := C.ulong(d.info.InputReportLength)
 	buf := (*C.uchar)(C.malloc(bufLen))
