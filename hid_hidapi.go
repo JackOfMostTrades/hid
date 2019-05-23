@@ -5,6 +5,7 @@ package hid
 import "C"
 
 /*
+#cgo darwin LDFLAGS: -framework CoreFoundation -framework IOKit
 #cgo freebsd CFLAGS: -I/usr/local/include/hidapi
 #cgo freebsd LDFLAGS: -L/usr/local/lib -Wl,-Bstatic -lhidapi -liconv -Wl,-Bdynamic -lusb
 
