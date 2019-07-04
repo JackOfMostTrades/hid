@@ -1,10 +1,12 @@
-// +build freebsd darwin
+// +build freebsd darwin linux
 
 package hid
 
 import "C"
 
 /*
+#cgo linux CFLAGS: -I/usr/include/hidapi
+#cgo linux LDFLAGS: -Wl,-Bstatic -lhidapi-hidraw -Wl,-Bdynamic -ludev
 #cgo darwin LDFLAGS: -framework CoreFoundation -framework IOKit
 #cgo freebsd CFLAGS: -I/usr/local/include/hidapi
 #cgo freebsd LDFLAGS: -L/usr/local/lib -Wl,-Bstatic -lhidapi -liconv -Wl,-Bdynamic -lusb
