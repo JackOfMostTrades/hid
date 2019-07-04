@@ -19,6 +19,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"sync"
 	"unsafe"
 )
@@ -63,7 +64,7 @@ func getDeviceInfo(device *C.struct_hid_device_info) (*DeviceInfo, error) {
 		return nil, fmt.Errorf("unable to convert product string: %v", err)
 	}
 
-	return &DeviceInfo{
+	info := &DeviceInfo{
 		Path:          C.GoString(device.path),
 		VendorID:      uint16(device.vendor_id),
 		ProductID:     uint16(device.product_id),
@@ -75,7 +76,17 @@ func getDeviceInfo(device *C.struct_hid_device_info) (*DeviceInfo, error) {
 
 		InputReportLength:  64, // Default size of raw HID report
 		OutputReportLength: 64,
-	}, nil
+	}
+
+	// since hidapi doesn't support usage/usagePage on non-windows and non-darwin platforms, fetch them directly
+	if runtime.GOOS != "darwin" && runtime.GOOS != "windows" {
+		err = getDeviceUsageInfo(info)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return info, nil
 }
 
 func ByPath(path string) (*DeviceInfo, error) {
