@@ -48,6 +48,11 @@ var (
 func getDeviceUsageInfo(info *DeviceInfo) error {
 	dev, err := os.OpenFile(info.Path, os.O_RDWR, 0)
 	if err != nil {
+		if os.IsPermission(err) {
+			info.Usage = 0
+			info.UsagePage = 0
+			return nil
+		}
 		return err
 	}
 	defer dev.Close()
